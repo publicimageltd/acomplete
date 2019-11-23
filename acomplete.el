@@ -147,7 +147,9 @@
 	      (t                     #'identity))))
     (apply fn s args)))
 
-(defun acomplete-format-and-propertize-collection (collection string-fn &optional data-fn finalize-string-fn)
+(cl-defun acomplete-format-and-propertize-collection (collection &key (string-fn "%s")
+								 (data-fn #'identity)
+								 (finalize-fn #'identity))
   "Build a list of strings with propertized data.
 
 STRING-FN has to return a string presentation for an item in COLLECTION.
@@ -160,9 +162,9 @@ FINALIZE-STRING-FN can modify the propertized string before it is
 added to the resulting collection."
   (when collection
     (let* ((string-list     (mapcar (apply-partially #'acomplete-fn-or-format string-fn) collection))
-	   (data-list       (mapcar (or data-fn #'identity) collection)))
-      (mapcar (or finalize-string-fn #'identity)
-	      (seq-mapn #'acomplete-format-and-propertize data-list string-list)))))
+	   (data-list       (mapcar data-fn collection)))
+      (mapcar finalize-fn
+	      (seq-mapn #'acomplete-propertize string-list data-list)))))
   
 (cl-defun acomplete-completing-read (&key prompt acollection (require-match t) history)
   "Call `completing-read' with a collection of propertized string lists."
@@ -193,7 +195,10 @@ passed to FINALIZE-FN."
   (acomplete-completing-read
       :prompt prompt
       :acollection (acomplete-format-and-propertize-collection
-		    collection string-fn data-fn finalize-fn)
+		    collection
+		    :string-fn string-fn
+		    :data-fn data-fn
+		    :finalize-fn finalize-fn)
       :require-match require-match
       :history history))
 
