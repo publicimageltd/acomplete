@@ -57,7 +57,7 @@
 ;;
 ;; Finally, the string created so far (INCLUDING the property slot
 ;; with the modified data) can be mapped through :FINALIZE-FN, to add
-;; some beauty. 
+;; some beauty.
 ;;
 ;; MORE DETAILS
 ;;
