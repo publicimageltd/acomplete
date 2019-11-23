@@ -20,13 +20,62 @@
 
 ;;; Commentary:
 
-;; 
+;; Completion with data "packed" within the selected data.
+;;
+;; BASIC USAGE
+;;
+;; (acompleter-completing-read PROMPT ACOLLECTION)
+;;
+;; ACOLLECTION is a list of strings. The strings are propertized. The data is stored in the property `data'.
+;;
+;; The completing read function returns the associated data object,
+;; not the string itself.
+;;
+;; There are convenience functions to create and access the data strings:
+;; acompleter-format-and-propertize DATA FORMAT-STRING &rest ARGS
+;;
+;;   Add DATA as a property item to the formatted FORMAT-STRING. Args
+;;   and FORMAT-STRING are passed to `format'.
+;;
+;; acompleter-format-and-propertize-collection COLL STRING-FN DATA-FN FINALIZE-FN
+;;
+;;    Propertize each item in COLL, successively. The string is
+;;    created by STRING-FN, which has to return a string
+;;    representation of each candidate in COLL. Similarly, DATA-FN
+;;    returns the data to be packed into the string. If DATA-FN is
+;;    ommitted, simply store the unpropertized string itself as its
+;;    data. FINALIZE-FN can be used to add some final touch on the
+;;    string, AFTER the data has been packed into it.
+;;
+;;    Alternatively, STRING-FN can also be a format string. This is a
+;;    shortcut for passing the function
+;;       (lambda (item) (format-string "some-format" item))
+;;
+;; EXAMPLE
+;;
+;; 1. Simple selection:
+;;
+;; (acompleter-completing-read "Select: "
+;; 			    (acompleter-format-and-propertize-collection
+;; 			     '(1 2 3)
+;; 			     #'number-to-string))
+;;
+;; 2. Finalize string:
+
+(acompleter-completing-read "Color: "
+			    (acompleter-format-and-propertize-collection
+			     ())
+
+
+;; (acompleter-completing-read
+;; "Test" (acompleter-format-and-propertize-collection '(1 2 3)
+;; #'number-to-string #'identity))
+
 
 ;;; Code:
 
 (require 'seq)
 (require 'cl-lib)
-;; (require 'flib)
 
 (defun acompleter-wrapface (face s)
   "Add FACE as a face property to S."
@@ -48,9 +97,6 @@
 	      ((stringp   string-fn) (apply-partially #'format string-fn))
 	      (t                     #'identity))))
     (apply fn s args)))
-
-;; (acompleter-fn-or-format (lambda (s) (format "%s" s)) "hallo")
-;; (acompleter-fn-or-format "%s" "hallo")
 
 (defun acompleter-format-and-propertize-collection (collection string-fn &optional data-fn finalize-string-fn)
   "Build a list of strings with propertized data.
@@ -74,8 +120,6 @@ added to the resulting collection."
   "Call `completing-read' with a collection of propertized string lists."
   (when-let* ((result (completing-read prompt acollection nil require-match nil history)))
     (acompleter-get-data result)))
-
-;; (acompleter-completing-read "Test" (acompleter-format-and-propertize-collection '(1 2 3) #'number-to-string #'identity))
 
 
 (provide 'acomplete)
