@@ -122,10 +122,6 @@
 (require 'seq)
 (require 'cl-lib)
 
-(defun acomplete-wrapface (face s)
-  "Add FACE as a face property to S."
-  (propertize s 'face face))
-
 (defun acomplete-propertize (s data)
   "Add DATA as a text property to S."
   (propertize s 'data data))
