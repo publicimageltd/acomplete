@@ -22,75 +22,120 @@
 
 ;; Completion with data "packed" within the selected data.
 ;;
-;; BASIC USAGE
+;; BASIC USAGE:
 ;;
-;; (acompleter-completing-read PROMPT ACOLLECTION)
+;; (acomplete PROMPT COLLECTION :string-fn :data-fn :finalize-fn)
 ;;
-;; ACOLLECTION is a list of strings. The strings are propertized. The data is stored in the property `data'.
+;; SHORT DESCRIPTION:
 ;;
-;; The completing read function returns the associated data object,
-;; not the string itself.
+;; Let the user choose between the items in COLLECTION. The items can
+;; be any kind of data. To determine how the data is presented to the
+;; user, the item is first passed to STRING-FN before selection. The
+;; selected item is either returned directly as it is, or passed to
+;; DATA-FN for further modifications. FINALIZE-FN adds a final touch
+;; to the selection strings.
 ;;
-;; There are convenience functions to create and access the data strings:
-;; acompleter-format-and-propertize DATA FORMAT-STRING &rest ARGS
+;; LONGER DESCRIPTION:
 ;;
-;;   Add DATA as a property item to the formatted FORMAT-STRING. Args
-;;   and FORMAT-STRING are passed to `format'.
+;; In the most basic case, the items in COLLECTION are returned
+;; unmodified. The item can be modified by DATA-FN, however. This
+;; modification is taking place AFTER the string representation is
+;; created. That is, STRING-FN has always to respond to the actual
+;; item in COLLECTION, not to its possibly modified variant returned
+;; by DATA-FN. You can think of DATA-FN as the function that modifies
+;; the data item after its selection, even though in fact, the
+;; modified data is already stored in the selection strings presented
+;; to the user.
 ;;
-;; acompleter-format-and-propertize-collection COLL STRING-FN DATA-FN FINALIZE-FN
+;; To give your (unmodified) data a representation, use STRING-FN. The
+;; value of STRING-FN can be either a function or itself a string. As
+;; a function, STRING-FN takes the unmodified item and returns its
+;; string representation. If STRING-FN is itself a string, however, it
+;; is passed to the format function with the item as its argument.
+;; Think of STRING-FN as 'the function which determines how the item
+;; is represented to the user.'
 ;;
-;;    Propertize each item in COLL, successively. The string is
-;;    created by STRING-FN, which has to return a string
-;;    representation of each candidate in COLL. Similarly, DATA-FN
-;;    returns the data to be packed into the string. If DATA-FN is
-;;    ommitted, simply store the unpropertized string itself as its
-;;    data. FINALIZE-FN can be used to add some final touch on the
-;;    string, AFTER the data has been packed into it.
+;; Finally, the string created so far (INCLUDING the property slot
+;; with the modified data) can be mapped through :FINALIZE-FN, to add
+;; some beauty.
 ;;
-;;    Alternatively, STRING-FN can also be a format string. This is a
-;;    shortcut for passing the function
-;;       (lambda (item) (format-string "some-format" item))
+;; MORE DETAILS
 ;;
-;; EXAMPLE
+;; You can access the data slot by passing the propertized string to
+;; the function `acomplete-get-data'. This is sometimes useful when
+;; finalizing a string.
 ;;
-;; 1. Simple selection:
+;; EXAMPLES
 ;;
-;; (acompleter-completing-read "Select: "
-;; 			    (acompleter-format-and-propertize-collection
-;; 			     '(1 2 3)
-;; 			     #'number-to-string))
+;; Simple choice between numbers:
 ;;
-;; 2. Finalize string:
-
-(acompleter-completing-read "Color: "
-			    (acompleter-format-and-propertize-collection
-			     ())
-
-
-;; (acompleter-completing-read
-;; "Test" (acompleter-format-and-propertize-collection '(1 2 3)
-;; #'number-to-string #'identity))
-
+;; (acomplete "Select number: " '(1 2 3))
+;;
+;; -> returns the number (as an integer)
+;;
+;; Nicer strings:
+;;
+;; (acomplete "Select number: " '(1 2 3) :string-fn "Number %d.")
+;;
+;; -> returns the number (as an integer)
+;;
+;; Select a color:
+;;
+;;  (acomplete "Select color: " (defined-colors)
+;;              :finalize-fn (lambda (color-string) (propertize color-string 'face `(:foreground ,color-string))))
+;;
+;; -> returns the color string
+;; 
+;; Select a buffer:
+;;
+;; (acomplete "Select buffer: " (buffer-list)
+;;             :string-fn #'buffer-name)
+;;
+;;  -> returns the buffer object
+;;
+;; Select a currently open file:
+;;
+;; (acomplete "Select open file: " (seq-filter #'buffer-file-name (buffer-list))
+;;           :data-fn #'buffer-file-name)
+;;
+;; -> returns the complete filename
+;;
+;; Select a color with a more elaborated string representation:
+;;
+;; (acomplete "Select color: " (defined-colors)
+;; 	   :string-fn (lambda (color-string)
+;; 			(concat color-string " "
+;; 				(apply #'color-rgb-to-hex (append (color-name-to-rgb color-string) '(2)))))
+;; 	   :finalize-fn (lambda (propertized-string)
+;; 			  (let* ((color-string (acomplete-get-data propertized-string)))
+;; 			    (propertize propertized-string 'face `(:foreground ,color-string)))))
+;; -> returns the color name
+;;
+;; Select a buffer with no match required:
+;;
+;; (acomplete "Select buffer: " (buffer-list)
+;; 	     :require-match nil))
+;;
 
 ;;; Code:
 
 (require 'seq)
 (require 'cl-lib)
 
-(defun acompleter-wrapface (face s)
+(defun acomplete-wrapface (face s)
   "Add FACE as a face property to S."
   (propertize s 'face face))
 
-(defun acompleter-format-and-propertize (data format-string &rest args)
+(defun acomplete-format-and-propertize (data format-string &rest args)
   "Add DATA as a text property to FORMAT-STRING."
   (let* ((s (apply 'format format-string args)))
     (propertize s 'data data)))
 
-(defun acompleter-get-data (propertized-string)
+(defun acomplete-get-data (propertized-string)
   "Get data stored as a text property in PROPERTIZED-STRING."
   (get-text-property 0 'data propertized-string))
 
-(defun acompleter-fn-or-format (string-fn s &rest args)
+(defun acomplete-fn-or-format (string-fn s &rest args)
   "If STRING-FN is a function, pass S to it, else treat it as a format string with minimally one arg."
   (let* ((fn (cond
 	      ((functionp string-fn) string-fn)
@@ -98,7 +143,7 @@
 	      (t                     #'identity))))
     (apply fn s args)))
 
-(defun acompleter-format-and-propertize-collection (collection string-fn &optional data-fn finalize-string-fn)
+(defun acomplete-format-and-propertize-collection (collection string-fn &optional data-fn finalize-string-fn)
   "Build a list of strings with propertized data.
 
 STRING-FN has to return a string presentation for an item in COLLECTION.
@@ -110,17 +155,45 @@ itself.
 FINALIZE-STRING-FN can modify the propertized string before it is
 added to the resulting collection."
   (when collection
-    (let* ((string-list     (mapcar (apply-partially #'acompleter-fn-or-format string-fn) collection))
+    (let* ((string-list     (mapcar (apply-partially #'acomplete-fn-or-format string-fn) collection))
 	   (data-list       (mapcar (or data-fn #'identity) collection)))
       (mapcar (or finalize-string-fn #'identity)
-	      (seq-mapn #'acompleter-format-and-propertize data-list string-list)))))
+	      (seq-mapn #'acomplete-format-and-propertize data-list string-list)))))
   
-;; FIXME add completing-read-args
-(cl-defun acompleter-completing-read (prompt acollection &key (require-match t) history)
+(cl-defun acomplete-completing-read (&key prompt acollection (require-match t) history)
   "Call `completing-read' with a collection of propertized string lists."
-  (when-let* ((result (completing-read prompt acollection nil require-match nil history)))
-    (acompleter-get-data result)))
+  (declare (indent 1))
+  (let* ((result    (completing-read prompt acollection nil require-match nil history))
+	 (has-data  (get-text-property 0 'data result)))
+    (if (or require-match has-data)
+	(acomplete-get-data result)
+      result)))
 
+;;;###autoload
+(cl-defun acomplete (prompt collection
+			    &key (string-fn "%s")
+			    (data-fn #'identity)
+			    (finalize-fn #'identity)
+			    (require-match t)
+			    history)
+  "Offer completion on COLLECTION.
+
+Collection will be represented to the user by mapping STRING-FN
+to each item. If STRING-FN is a string, it is used as a format
+string with the item as its single argument.
+
+DATA-FN maps a data item to each item of the collection.
+
+Before offering the strings for selection, the will eventually
+passed to FINALIZE-FN."
+  (acomplete-completing-read
+      :prompt prompt
+      :acollection (acomplete-format-and-propertize-collection
+		    collection string-fn data-fn finalize-fn)
+      :require-match require-match
+      :history history))
+
+;; (acomplete "Select: " '(1 2 3) :string-fn "Nummer %s.")
 
 (provide 'acomplete)
 ;;; acomplete.el ends here
