@@ -126,11 +126,6 @@
   "Add FACE as a face property to S."
   (propertize s 'face face))
 
-(defun acomplete-format-and-propertize (data format-string &rest args)
-  "Add DATA as a text property to FORMAT-STRING."
-  (let* ((s (apply 'format format-string args)))
-    (propertize s 'data data)))
-
 (defun acomplete-propertize (s data)
   "Add DATA as a text property to S."
   (propertize s 'data data))
