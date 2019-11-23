@@ -53,11 +53,11 @@
 ;; string representation. If STRING-FN is itself a string, however, it
 ;; is passed to the format function with the item as its argument.
 ;; Think of STRING-FN as 'the function which determines how the item
-;; is represented to the user.'
+;; is represented to the user.' STRING-FN defaults to '%s'.
 ;;
 ;; Finally, the string created so far (INCLUDING the property slot
 ;; with the modified data) can be mapped through :FINALIZE-FN, to add
-;; some beauty.
+;; some beauty. 
 ;;
 ;; MORE DETAILS
 ;;
