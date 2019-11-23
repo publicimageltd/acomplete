@@ -114,7 +114,7 @@
 ;; Select a buffer with no match required:
 ;;
 ;; (acomplete "Select buffer: " (buffer-list)
-;; 	     :require-match nil))
+;; 	     :require-match nil)
 ;;
 
 ;;; Code:
