@@ -131,6 +131,10 @@
   (let* ((s (apply 'format format-string args)))
     (propertize s 'data data)))
 
+(defun acomplete-propertize (s data)
+  "Add DATA as a text property to S."
+  (propertize s 'data data))
+
 (defun acomplete-get-data (propertized-string)
   "Get data stored as a text property in PROPERTIZED-STRING."
   (get-text-property 0 'data propertized-string))
