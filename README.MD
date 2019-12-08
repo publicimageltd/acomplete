@@ -7,7 +7,7 @@ Completion with data "packed" within the selected data.
 # BASIC USAGE:
 
 ```
-(acomplete PROMPT COLLECTION :string-fn :data-fn :finalize-fn)
+(acomplete PROMPT COLLECTION :string-fn fn :data-fn fn :finalize-fn fn)
 ```
 
 # SHORT DESCRIPTION:
@@ -18,6 +18,14 @@ user, the item is first passed to STRING-FN before selection. The
 selected item is either returned directly as it is, or passed to
 DATA-FN for further modifications. FINALIZE-FN adds a final touch
 to the selection strings.
+
+STRING-FN: Recieve a data item and return a string.
+
+DATA-FN: Modifiy the data item before it is 'packed' into the string
+as its associated return value.
+
+FINALIZE-FN: Receive a string and return a string.
+
 
 # LONGER DESCRIPTION:
 
