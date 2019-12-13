@@ -14,7 +14,7 @@ Completion with data "packed" within the selected data.
 
 Let the user choose between the items in COLLECTION. The items can be
 any kind of data. The string representation and the data associated
-with it can optionally be fine tuned with functions.
+with it can be optionally  fine tuned with functions.
 
 # LONGER DESCRIPTION:
 
