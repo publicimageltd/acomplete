@@ -16,21 +16,6 @@ Let the user choose between the items in COLLECTION. The items can be
 any kind of data. The string representation and the data associated
 with it can optionally be fine tuned with functions.
 
-Using STRING-FN and DATA-FN: To determine how the data is presented to
-the user, the item is first passed to STRING-FN before selection. If
-no function is provided, just print the item as is. Then, the item to
-be associated with the entry via DATA-FN is determined. If no data
-function is provided, just use the item as is. Finally, FINALIZE-FN
-adds a final touch to the selection strings.
-
- `STRING-FN`:  Recieve a data item and return a string. Can be either
- a function or a string which is passed to `format`. Defaults to
- `"%s"`. 
- 
- `DATA-FN`:  Modifiy the data item before it is 'packed' into the string as its associated return value. Defaults to `identity`.
-
-`FINALIZE-FN`: Receive a string and return a string. Defaults to `identity`.
-
 # LONGER DESCRIPTION:
 
 In the most basic case, the items in COLLECTION are returned
@@ -53,6 +38,14 @@ represented to the user.' STRING-FN defaults to `"%s"`'.
 Finally, the string created so far (INCLUDING the property slot
 with the modified data) can be mapped through :FINALIZE-FN, to add
 some beauty.
+
+ `STRING-FN`:  Recieve a data item and return a string. Can be either
+ a function or a string which is passed to `format`. Defaults to
+ `"%s"`. 
+ 
+ `DATA-FN`:  Modifiy the data item before it is 'packed' into the string as its associated return value. Defaults to `identity`.
+
+`FINALIZE-FN`: Receive a string and return a string. Defaults to `identity`.
 
 # MORE DETAILS
 
